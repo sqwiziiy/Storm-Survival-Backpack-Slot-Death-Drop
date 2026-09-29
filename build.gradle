@@ -1,0 +1,75 @@
+plugins {
+    // The inspected Traveler's Backpack JAR records Loom 1.12.7 remap metadata.
+    id 'fabric-loom' version '1.12.7'
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.mod_group
+
+base { archivesName = project.archives_base_name }
+
+repositories { }
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+
+    // Exact Phase A copies; never replace these with a newer remote artifact.
+    modImplementation files('work/mods/travelersbackpack-fabric-1.20.1-9.1.55.jar')
+    modImplementation files('work/mods/trinkets-3.7.2.jar')
+    modImplementation files('work/mods/cardinal-components-api-5.2.3.jar')
+    modImplementation files('work/mods/cardinal-components-base-5.2.3.jar')
+    modImplementation files('work/mods/cardinal-components-entity-5.2.3.jar')
+}
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand(version: project.version) }
+}
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(17) }
+    withSourcesJar()
+}
+
+tasks.withType(JavaCompile).configureEach { it.options.release = 17 }
+
+tasks.register('verifyBridgeSource') {
+    group = 'verification'
+    description = 'Statically verifies the narrow terminal-death transfer.'
+    doLast {
+        def source = file('src/main/java/com/mentality/stormsurvivalbackpackdeathcompat/mixin/BackpackDeathTransferMixin.java').text
+        def allMainSource = fileTree('src/main/java').matching { include '**/*.java' }.files.collect { it.text }.join('\n')
+        assert source.contains('@Mixin(value = LivingEntity.class, priority = 1100)')
+        assert source.contains('@Inject(method = "drop"')
+        assert source.contains('TrinketsApi.getTrinketComponent')
+        assert source.contains('inventory.get("chest")')
+        assert source.contains('chest.get("back")')
+        assert source.contains('TravelersBackpackItem')
+        assert source.contains('KEEP_INVENTORY')
+        assert source.contains('BackpackDeathHelperInvoker')
+        assert source.contains('backpackDeathPlace')
+        assert source.contains('backpackForceDeathPlace')
+        assert !source.contains('player.dropStack')
+        assert source.contains('back.setStack(index, ItemStack.EMPTY)')
+        assert !allMainSource.contains('inventory.setStack')
+        assert !allMainSource.contains('onPlayerDrops(')
+        assert !allMainSource.contains('com.kador.graves')
+    }
+}
+
+tasks.register('runBridgeLogicTests', JavaExec) {
+    group = 'verification'
+    description = 'Runs isolated bridge-ordering and failure-safety checks.'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'com.mentality.stormsurvivalbackpackdeathcompat.BridgeLogicTest'
+    jvmArgs '-ea'
+}
+
+tasks.named('check') {
+    dependsOn(tasks.named('verifyBridgeSource'))
+    dependsOn(tasks.named('runBridgeLogicTests'))
+}

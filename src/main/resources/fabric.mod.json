@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "storm_survival_backpack_death_compat",
+  "version": "${version}",
+  "name": "Storm Survival Backpack Slot Death Drop",
+  "description": "Routes the Trinkets back-slot Traveler's Backpack through its native final-death path.",
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.mentality.stormsurvivalbackpackdeathcompat.StormSurvivalBackpackDeathCompat"]
+  },
+  "mixins": ["storm_survival_backpack_death_compat.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "fabric-api": ">=0.92.12+1.20.1",
+    "minecraft": "~1.20.1",
+    "java": ">=17",
+    "travelersbackpack": ">=9.1.55",
+    "trinkets": ">=3.7.2"
+  },
+  "suggests": {
+    "hardcorerevival": "*",
+    "bodiesbodies": "*"
+  }
+}

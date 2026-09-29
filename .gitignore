@@ -1,0 +1,15 @@
+.gradle/
+build/
+out/
+run/
+logs/
+*.log
+*.lock
+.idea/
+*.iml
+work/mods/
+work/decompiled/
+releases/*.jar
+reports/
+.agents/
+.codex/
